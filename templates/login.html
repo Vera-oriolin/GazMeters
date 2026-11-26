@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Вход{% endblock %}
+{% block content %}
+<div style="max-width:400px;margin:50px auto 0">
+    <div class="card" style="padding:32px">
+        <div class="page-title" style="font-size:22px;text-align:center">Вход</div>
+        <div class="page-sub" style="text-align:center;margin-bottom:24px">Введите данные вашего аккаунта</div>
+        <form method="post">
+            <div class="field">
+                <label>Логин</label>
+                <input type="text" name="username" required autofocus placeholder="Введите логин">
+            </div>
+            <div class="field">
+                <label>Пароль</label>
+                <input type="password" name="password" required placeholder="Введите пароль">
+            </div>
+            <button>Войти в систему</button>
+        </form>
+        <p class="center mt muted" style="font-size:12.5px">
+            Нет аккаунта? <a href="{{ url_for('register') }}" style="color:var(--blue);font-weight:600">Создать</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

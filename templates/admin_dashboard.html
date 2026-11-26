@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Клиенты{% endblock %}
+{% block content %}
+<div style="max-width:1180px;margin:0 auto">
+    <div class="page-title">Клиенты</div>
+    <div class="page-sub">Сводная информация и сроки поверки счётчиков</div>
+    <div class="grid cols-3" style="margin-bottom:22px">
+        <div class="metric">
+            <div class="k">Всего клиентов</div>
+            <div class="v">{{ stats.total }}</div>
+        </div>
+        <div class="metric danger">
+            <div class="k">Просрочено</div>
+            <div class="v">{{ stats.overdue }}</div>
+        </div>
+        <div class="metric warn">
+            <div class="k">Ближайшие 30 дней</div>
+            <div class="v">{{ stats.in_30 }}</div>
+        </div>
+    </div>
+    <form method="get" style="display:grid;grid-template-columns:2fr 1.2fr auto auto;gap:12px;margin-bottom:18px">
+        <input type="text" name="search" value="{{ search }}" placeholder="Поиск: ФИО, логин, адрес, организация, заводской номер">
+        <select name="filter">
+            <option value="all" {% if filter_type =='all' %}selected{% endif %}>Все клиенты</option>
+            <option value="overdue" {% if filter_type =='overdue' %}selected{% endif %}>Просроченные</option>
+            <option value="30" {% if filter_type =='30' %}selected{% endif %}>Ближайшие 30 дней</option>
+            <option value="year" {% if filter_type =='year' %}selected{% endif %}>Ближайший год</option>
+            <option value="nearest" {% if filter_type =='nearest' %}selected{% endif %}>Самая ближайшая проверка</option>
+        </select>
+        <button class="btn-sm" style="width:auto;padding:9px 20px">Применить</button>
+        <a href="{{ url_for('admin_export', search=search, filter=filter_type) }}" class="btn-sm" style="background:#DC2626;padding:9px 20px;color:#fff">PDF</a>
+    </form>
+    <div class="card" style="padding:0;overflow:hidden">
+        <div style="overflow-x:auto">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Клиент</th>
+                        <th>Адрес</th>
+                        <th>Организация</th>
+                        <th>Счётчик</th>
+                        <th>Заводской номер</th>
+                        <th>Прошлая поверка</th>
+                        <th>Следующая поверка</th>
+                        <th>Статус</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    {% set meter = user.meter %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('admin_client', user_id=user.id) }}" style="color:var(--navy);font-weight:700;text-decoration:none">{{ user.full_name }}</a>
+                            <br>
+                            <span class="muted mono">{{ user.username }}</span>
+                        </td>
+                        <td>{{ user.address or '—' }}</td>
+                        <td>
+                            {% if meter.meter_type == 'промышленный' %}
+                            {{ user.organization or '—' }}
+                            {% else %}
+                            <span class="muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ meter.model }} <span class="muted">· {{ meter.meter_type }}</span></td>
+                        <td class="mono">{{ meter.serial_number }}</td>
+                        <td>{{ meter.last_check_date.strftime('%d.%m.%Y') }}</td>
+                        <td><b style="color:var(--navy)">{{ meter.next_check_date.strftime('%d.%m.%Y') }}</b></td>
+                        <td>
+                            {% if meter.overdue %}
+                            <span class="status s-overdue">-{{ -meter.days }} дн.</span>
+                            {% elif meter.days <= 30 %}
+                            <span class="status s-soon">{{ meter.days }} дн.</span>
+                            {% elif meter.days <= 90 %}
+                            <span class="status s-mid">{{ meter.days }} дн.</span>
+                            {% else %}
+                            <span class="status s-ok">{{ meter.days }} дн.</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="center muted" style="padding:48px">Нет записей</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

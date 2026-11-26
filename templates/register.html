@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Регистрация{% endblock %}
+{% block content %}
+<div style="max-width:950px;margin:0 auto">
+<div class="card" style="padding: 32px;">
+<div class="page-title" style="text-align:center;font-size:22px">Регистрация</div>
+<div class="page-sub" style="text-align:center;margin-bottom:28px">Создайте аккаунт и укажите данные счётчика</div>
+<form method="post">
+    <div class="grid cols-2" style="gap: 40px; align-items: start;">
+        <div>
+            <div class="section" style="margin-top:0">Данные аккаунта</div>
+            <div class="field"><label>Логин *</label><input name="username" value="{{ username or '' }}" required placeholder="ivanov"></div>
+            <div class="field"><label>ФИО *</label><input name="full_name" value="{{ full_name or '' }}" required placeholder="Иванов Иван Иванович"></div>
+            <div class="field"><label>Адрес</label><input name="address" value="{{ address or '' }}" placeholder="ул. Ленина, д. 5, кв. 12"></div>
+            <div class="field"><label>Пароль *</label><input type="password" name="password" required placeholder="Минимум 6 символов"></div>
+            <div class="field"><label>Повторите пароль *</label><input type="password" name="password2" required></div>
+        </div>
+        <div>
+            <div class="section" style="margin-top:0">Данные счётчика</div>
+            <div class="field"><label>Тип счётчика *</label>
+                <select name="meter_type" id="meter_type" required>
+                    <option value="" disabled {% if not meter_type %}selected{% endif %}>— выберите —</option>
+                    <option value="бытовой" {% if meter_type =='бытовой' %}selected{% endif %}>Бытовой (4–12 лет)</option>
+                    <option value="промышленный" {% if meter_type =='промышленный' %}selected{% endif %}>Промышленный (1–5 лет)</option>
+                </select>
+            </div>
+            <div class="field"><label>Модель *</label>
+                <select name="model" id="model" required>
+                    <option value="" disabled {% if not model %}selected{% endif %}>— выберите модель —</option>
+                </select>
+                <div class="hint" id="model_hint"></div>
+            </div>
+            <div class="field" id="org_field" style="display:none">
+                <label>Организация *</label>
+                <input name="organization" id="organization" value="{{ organization or '' }}" placeholder="ООО «ПромГаз»">
+                <div class="hint">Указывается только для промышленных счётчиков.</div>
+            </div>
+            <div class="field"><label>Заводской номер *</label>
+                <input name="serial_number" value="{{ serial_number or '' }}" required placeholder="SN-BK-G4-0001">
+                <div class="hint">Формат для <span id="hint_model_name">модели</span>: SN-МОДЕЛЬ-XXXX. Заводской номер указан в паспорте прибора и уникален.</div>
+            </div>
+            <div class="grid cols-2" style="gap:16px">
+                <div class="field"><label>Дата изготовления *</label><input type="date" name="manufacture_date" max="{{ today }}" value="{{ manufacture_date or '' }}" required></div>
+                <div class="field"><label>Дата прошлой поверки *</label><input type="date" name="last_check_date" id="last_check_date" max="{{ today }}" value="{{ last_check_date or '' }}" required></div>
+            </div>
+            <div class="field"><label>Межповерочный интервал (лет) *</label>
+                <select name="interval" id="interval" required>
+                    <option value="" disabled {% if not interval %}selected{% endif %}>— выберите интервал —</option>
+                </select>
+                <div class="hint" id="interval_hint"></div>
+            </div>
+            <div class="field">
+                <label style="color: var(--blue); font-weight: 600;">Следующая поверка (рассчитывается автоматически)</label>
+                <input type="text" id="next_check_display" readonly style="background: var(--sky-50); border-color: var(--sky-100); color: var(--navy); font-weight: 700; font-size: 15px; cursor: default;" value="—">
+                <div class="hint" id="calc_hint"></div>
+            </div>
+        </div>
+    </div>
+            <div class="field" style="display: flex; align-items: flex-start; gap: 10px; margin-top: 32px; margin-bottom: 12px; padding-top: 24px; border-top: 1px solid var(--line);">
+                <input type="checkbox" name="agree_terms" id="agree_terms" required style="width: 18px; height: 18px; margin-top: 2px; cursor: pointer; flex-shrink: 0;">
+                <label for="agree_terms" style="font-size: 13px; line-height: 1.5; color: var(--muted); font-weight: normal; cursor: pointer; margin: 0;">
+                    Я согласен на обработку персональных данных и принимаю условия
+                    <a href="https://drive.google.com/file/d/1zaMseoFJhdNj4yI9xRu6dQLxAuGR4U_W/view?usp=drive_link" target="_blank" style="color: var(--blue); text-decoration: underline; font-weight: 600;">Политики конфиденциальности</a>.
+                </label>
+            </div>
+            <div class="field" style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 24px;">
+                <input type="checkbox" name="agree_cookies" id="agree_cookies" required style="width: 18px; height: 18px; margin-top: 2px; cursor: pointer; flex-shrink: 0;">
+                <label for="agree_cookies" style="font-size: 13px; line-height: 1.5; color: var(--muted); font-weight: normal; cursor: pointer; margin: 0;">
+                    Я согласен на использование файлов <b>Cookies</b> для корректной работы системы.
+                </label>
+            </div>
+    <button style="width: 100%; font-size: 15px; padding: 14px;">Создать аккаунт</button>
+</form>
+<p class="center mt muted" style="font-size:12.5px; margin-top: 20px;">Уже есть аккаунт? <a href="{{ url_for('login') }}" style="color:var(--blue);font-weight:600">Войти</a></p>
+</div>
+</div>
+<script>
+const MODELS = {{ (intervals_data or []) | tojson }};
+const byId = identifier => document.getElementById(identifier);
+const savedModel = {{ (model or '') | tojson }};
+const savedInterval = {{ (interval or '') | tojson }};
+
+function toggleOrganization() {
+    const meter_type = byId('meter_type').value, organization_wrapper = byId('org_field'), organization_input = byId('organization');
+    if (meter_type === 'промышленный') { organization_wrapper.style.display = ''; organization_input.required = true; }
+    else { organization_wrapper.style.display = 'none'; organization_input.required = false; organization_input.value = ''; }
+}
+
+function fillModels() {
+    const meter_type = byId('meter_type').value, model_list = MODELS.filter(m => m.type === meter_type);
+    byId('model').innerHTML = '<option value="" disabled>— выберите модель —</option>';
+    byId('interval').innerHTML = '<option value="" disabled>— выберите интервал —</option>';
+    model_list.forEach(entry => {
+        const option = document.createElement('option');
+        option.value = entry.model; option.textContent = entry.model;
+        if (entry.model === savedModel) option.selected = true;
+        byId('model').appendChild(option);
+    });
+    fillIntervals();
+}
+
+function fillIntervals() {
+    const meter_type = byId('meter_type').value, model_name = byId('model').value;
+    const model_list = MODELS.filter(m => m.type === meter_type && m.model === model_name);
+    byId('interval').innerHTML = '';
+    const [min_years, max_years] = meter_type === 'бытовой' ? [4, 12] : [1, 5];
+    const passport_years = model_list[0] ? model_list[0].years : null;
+    for (let year = min_years; year <= max_years; year++) {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year + ' лет' + (year === passport_years ? ' (паспорт)' : '');
+        if (String(year) === savedInterval || (!savedInterval && year === passport_years)) option.selected = true;
+        byId('interval').appendChild(option);
+    }
+
+    const meterTypeText = meter_type === 'бытовой' ? 'бытовой' : 'промышленный';
+    byId('model_hint').textContent = model_name ? `Тип: ${meterTypeText}. Диапазон интервала: ${min_years}–${max_years} лет.` : '';
+    byId('hint_model_name').textContent = model_name || 'модели';
+
+    updateNextCheckDisplay();
+}
+
+function updateNextCheckDisplay() {
+    const lastCheckValue = byId('last_check_date').value;
+    const intervalValue = byId('interval').value;
+    const display = byId('next_check_display');
+    const calcHint = byId('calc_hint');
+
+    if (!lastCheckValue || !intervalValue) {
+        display.value = '—';
+        calcHint.textContent = '';
+        return;
+    }
+
+    const lastDate = new Date(lastCheckValue);
+    if (isNaN(lastDate.getTime())) { display.value = '—'; return; }
+
+    const nextDate = new Date(lastDate);
+    nextDate.setFullYear(lastDate.getFullYear() + parseInt(intervalValue, 10));
+
+    const day = String(nextDate.getDate()).padStart(2, '0');
+    const month = String(nextDate.getMonth() + 1).padStart(2, '0');
+    const year = nextDate.getFullYear();
+
+    display.value = `${day}.${month}.${year}`;
+    calcHint.textContent = `Расчёт: ${lastCheckValue.split('-').reverse().join('.')} + ${intervalValue} года = ${display.value}`;
+}
+
+byId('meter_type').onchange = function () { toggleOrganization(); fillModels(); };
+byId('model').onchange = fillIntervals;
+byId('last_check_date').oninput = updateNextCheckDisplay;
+byId('interval').onchange = updateNextCheckDisplay;
+
+if (byId('meter_type').value) fillModels();
+toggleOrganization();
+updateNextCheckDisplay();
+</script>
+{% endblock %}

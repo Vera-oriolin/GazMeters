@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Редактирование счётчика{% endblock %}
+{% block content %}
+<div style="max-width:700px;margin:0 auto">
+    <div class="page-title">Редактирование счётчика</div>
+    <div class="page-sub">{{ user.full_name }} · {{ user.username }}</div>
+    <p style="margin-bottom:18px"><a href="{{ url_for('admin_client', user_id=user.id) }}" style="color:var(--blue);font-weight:600">Вернуться к карточке</a></p>
+    <div class="card">
+        <div class="hint" style="margin-bottom:16px">Персональные данные (ФИО, адрес) клиент редактирует сам через свой профиль. Здесь меняются только параметры счётчика. Организация — для промышленных счётчиков.</div>
+        <form method="post">
+            <div class="section">Данные счётчика</div>
+            <div class="grid cols-2">
+                <div class="field">
+                    <label>Тип *</label>
+                    <select name="meter_type" id="meter_type" required>
+                        <option value="" disabled {% if not meter_type %}selected{% endif %}>— выберите —</option>
+                        <option value="бытовой" {% if meter_type =='бытовой' %}selected{% endif %}>Бытовой (4–12 лет)</option>
+                        <option value="промышленный" {% if meter_type =='промышленный' %}selected{% endif %}>Промышленный (1–5 лет)</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Модель *</label>
+                    <select name="model" id="model" required>
+                        <option value="" disabled {% if not model %}selected{% endif %}>— выберите модель —</option>
+                    </select>
+                </div>
+            </div>
+            <div class="field" id="org_field" style="display:none">
+                <label>Организация *</label>
+                <input name="organization" id="organization" value="{{ organization or '' }}" placeholder="ООО «ПромГаз»">
+                <div class="hint">Указывается только для промышленных счётчиков.</div>
+            </div>
+            <div class="field">
+                <label>Заводской номер *</label>
+                <input name="serial_number" value="{{ serial_number or '' }}" required>
+            </div>
+            <div class="grid cols-2">
+                <div class="field">
+                    <label>Дата изготовления *</label>
+                    <input type="date" name="manufacture_date" max="{{ today }}" value="{{ manufacture_date or '' }}" required>
+                </div>
+                <div class="field">
+                    <label>Дата прошлой поверки *</label>
+                    <input type="date" name="last_check_date" id="last_check_date" max="{{ today }}" value="{{ last_check_date or '' }}" required>
+                </div>
+            </div>
+            <div class="field">
+                <label>Межповерочный интервал (лет) *</label>
+                <select name="interval" id="interval" required>
+                    <option value="" disabled {% if not interval %}selected{% endif %}>— выберите интервал —</option>
+                </select>
+                <div class="hint">Следующая поверка пересчитается автоматически при сохранении.</div>
+            </div>
+            <button class="mt">Сохранить изменения</button>
+        </form>
+    </div>
+</div>
+<script>
+    const MODELS = {{ (intervals_data or []) | tojson }};
+    const byId = identifier => document.getElementById(identifier);
+    const savedModel = {{ (model or '') | tojson }};
+    const savedInterval = {{ (interval or '') | tojson }};
+
+    function toggleOrganization() {
+        const meter_type = byId('meter_type').value, organization_wrapper = byId('org_field'), organization_input = byId('organization');
+        if (meter_type === 'промышленный') {
+            organization_wrapper.style.display = '';
+            organization_input.required = true;
+        } else {
+            organization_wrapper.style.display = 'none';
+            organization_input.required = false;
+            organization_input.value = '';
+        }
+    }
+
+    function fillModels() {
+        const meter_type = byId('meter_type').value, model_list = MODELS.filter(m => m.type === meter_type);
+        byId('model').innerHTML = '<option value="" disabled>— выберите модель —</option>';
+        byId('interval').innerHTML = '<option value="" disabled>— выберите интервал —</option>';
+        model_list.forEach(entry => {
+            const option = document.createElement('option');
+            option.value = entry.model;
+            option.textContent = entry.model;
+            if (entry.model === savedModel) option.selected = true;
+            byId('model').appendChild(option);
+        });
+        fillIntervals();
+    }
+
+    function fillIntervals() {
+        const meter_type = byId('meter_type').value, model_name = byId('model').value;
+        const model_list = MODELS.filter(m => m.type === meter_type && m.model === model_name);
+        byId('interval').innerHTML = '';
+        const [min_years, max_years] = meter_type === 'бытовой' ? [4, 12] : [1, 5];
+        const passport_years = model_list[0] ? model_list[0].years : null;
+        for (let year = min_years; year <= max_years; year++) {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year + ' лет' + (year === passport_years ? ' (паспорт)' : '');
+            if (String(year) === savedInterval || (!savedInterval && year === passport_years)) option.selected = true;
+            byId('interval').appendChild(option);
+        }
+    }
+
+    byId('meter_type').onchange = function () {
+        toggleOrganization();
+        fillModels();
+    };
+    byId('model').onchange = fillIntervals;
+    if (byId('meter_type').value) fillModels();
+    toggleOrganization();
+</script>
+{% endblock %}

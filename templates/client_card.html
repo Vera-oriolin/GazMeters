@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Карточка клиента{% endblock %}
+{% block content %}
+<div style="max-width:900px;margin:0 auto">
+    <div class="page-title">Карточка клиента</div>
+    <div class="page-sub">{{ user.full_name }} · {{ user.username }}</div>
+    <p style="margin-bottom:18px"><a href="{{ url_for('admin') }}" style="color:var(--blue);font-weight:600">Назад к списку</a></p>
+    {% if user.meter %}
+    {% set meter = user.meter %}
+    <div class="hero">
+        <div>
+            <div class="k">Следующая поверка</div>
+            <div class="big">{{ meter.next_check_date.strftime('%d.%m.%Y') }}</div>
+        </div>
+        <div>
+            <span class="status s-{{ meter.status[0] }}">
+                {% if meter.overdue %}
+                Просрочена на {{ -meter.days }} дн.
+                {% else %}
+                Осталось {{ meter.days }} дн.
+                {% endif %}
+            </span>
+        </div>
+    </div>
+    <div class="grid cols-2">
+        <div class="card">
+            <h3>Персональные данные</h3>
+            <table class="kv">
+                <tr>
+                    <td>ФИО</td>
+                    <td>{{ user.full_name }}</td>
+                </tr>
+                <tr>
+                    <td>Логин</td>
+                    <td class="mono">{{ user.username }}</td>
+                </tr>
+                <tr>
+                    <td>Адрес</td>
+                    <td>{{ user.address or '—' }}</td>
+                </tr>
+                <tr>
+                    <td>Организация</td>
+                    <td>
+                        {% if meter.meter_type == 'промышленный' %}
+                        {{ user.organization or '—' }}
+                        {% else %}
+                        <span class="muted">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>ID</td>
+                    <td class="mono">{{ user.id }}</td>
+                </tr>
+            </table>
+        </div>
+        <div class="card">
+            <h3>Данные счётчика</h3>
+            <table class="kv">
+                <tr>
+                    <td>Модель</td>
+                    <td>{{ meter.model }}</td>
+                </tr>
+                <tr>
+                    <td>Тип</td>
+                    <td>{{ meter.meter_type }}</td>
+                </tr>
+                <tr>
+                    <td>Заводской номер</td>
+                    <td class="mono">{{ meter.serial_number }}</td>
+                </tr>
+                <tr>
+                    <td>Изготовлен</td>
+                    <td>{{ meter.manufacture_date.strftime('%d.%m.%Y') }}</td>
+                </tr>
+                <tr>
+                    <td>Прошлая поверка</td>
+                    <td>{{ meter.last_check_date.strftime('%d.%m.%Y') }}</td>
+                </tr>
+                <tr>
+                    <td>Следующая поверка</td>
+                    <td>{{ meter.next_check_date.strftime('%d.%m.%Y') }}</td>
+                </tr>
+                <tr>
+                    <td>Статус</td>
+                    <td>{{ meter.status[1] }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    <div class="card" style="margin-top:22px">
+        <h3>Отметить поверку</h3>
+        <form method="post" action="{{ url_for('admin_client_check', user_id=user.id) }}" style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end">
+            <div class="field" style="margin:0">
+                <label>Дата поверки *</label>
+                <input type="date" name="check_date" required max="{{ max_date }}" value="{{ today_str }}">
+            </div>
+            <div class="field" style="margin:0">
+                <label>Интервал (лет)</label>
+                <input type="number" name="interval" min="1" max="{{ 12 if meter.meter_type == 'бытовой' else 5 }}" placeholder="по паспорту модели">
+            </div>
+            <button class="btn-sm" style="width:auto;padding:11px 22px">Отметить</button>
+        </form>
+    </div>
+    <div class="card" style="margin-top:22px;display:flex;gap:12px;flex-wrap:wrap">
+        <a href="{{ url_for('admin_client_edit', user_id=user.id) }}" class="btn btn-sm" style="text-decoration:none;width:auto;padding:11px 22px">Редактировать счётчик</a>
+        <form method="post" action="{{ url_for('admin_client_delete', user_id=user.id) }}" onsubmit="return confirm('Удалить клиента «{{ user.full_name }}» и счётчик {{ meter.serial_number }}?');" style="margin:0">
+            <button type="submit" class="btn-sm" style="background:#DC2626;width:auto;padding:11px 22px">Удалить клиента</button>
+        </form>
+    </div>
+    {% else %}
+    <div class="card center">
+        <p class="muted">У клиента нет счётчика.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

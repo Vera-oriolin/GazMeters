@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Мой счётчик{% endblock %}
+{% block content %}
+<div style="max-width:900px;margin:0 auto">
+    <div class="page-title">Мой счётчик</div>
+    <div class="page-sub">Информация о приборе учёта и сроках поверки</div>
+    <p style="margin-bottom:18px"><a href="{{ url_for('profile') }}" class="btn btn-sm" style="text-decoration:none;width:auto;padding:9px 20px">Мой профиль</a></p>
+    {% if user.meter %}
+    {% set meter = user.meter %}
+    <div class="hero">
+        <div>
+            <div class="k">Следующая поверка</div>
+            <div class="big">{{ meter.next_check_date.strftime('%d.%m.%Y') }}</div>
+        </div>
+        <div>
+            {% if meter.overdue %}
+            <span class="status s-overdue">Просрочена на {{ -meter.days }} дн.</span>
+            {% elif meter.days <= 30 %}
+            <span class="status s-soon">Осталось {{ meter.days }} дн.</span>
+            {% elif meter.days <= 90 %}
+            <span class="status s-mid">Осталось {{ meter.days }} дн.</span>
+            {% else %}
+            <span class="status s-ok">Осталось {{ meter.days }} дн.</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="grid cols-2">
+        <div class="card">
+            <h3>Данные счётчика</h3>
+            <table class="kv">
+                <tr>
+                    <td>Модель</td>
+                    <td>{{ meter.model }}</td>
+                </tr>
+                <tr>
+                    <td>Тип</td>
+                    <td>{{ meter.meter_type }}</td>
+                </tr>
+                <tr>
+                    <td>Заводской номер</td>
+                    <td class="mono">{{ meter.serial_number }}</td>
+                </tr>
+                <tr>
+                    <td>Дата изготовления</td>
+                    <td>{{ meter.manufacture_date.strftime('%d.%m.%Y') }}</td>
+                </tr>
+                <tr>
+                    <td>Прошлая поверка</td>
+                    <td>{{ meter.last_check_date.strftime('%d.%m.%Y') }}</td>
+                </tr>
+                <tr>
+                    <td>Следующая поверка</td>
+                    <td>{{ meter.next_check_date.strftime('%d.%m.%Y') }}</td>
+                </tr>
+            </table>
+        </div>
+        <div class="card">
+            <h3>Мои данные</h3>
+            <table class="kv">
+                <tr>
+                    <td>ФИО</td>
+                    <td>{{ user.full_name }}</td>
+                </tr>
+                <tr>
+                    <td>Логин</td>
+                    <td class="mono">{{ user.username }}</td>
+                </tr>
+                <tr>
+                    <td>Адрес</td>
+                    <td>{{ user.address or '—' }}</td>
+                </tr>
+                {% if meter.meter_type == 'промышленный' %}
+                <tr>
+                    <td>Организация</td>
+                    <td>{{ user.organization or '—' }}</td>
+                </tr>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="card center">
+        <p class="muted">Счётчик не привязан. Обратитесь к администратору.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

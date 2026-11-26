@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Профиль{% endblock %}
+{% block content %}
+<div style="max-width:1000px;margin:0 auto">
+    <div class="card">
+        <div class="page-title" style="text-align:center;font-size:22px">Мой профиль</div>
+        <div class="page-sub" style="text-align:center;margin-bottom:24px">ФИО, адрес и смена пароля</div>
+        <form method="post">
+            <div class="grid cols-2" style="gap:32px;align-items:start">
+                <div>
+                    <div class="section">Персональные данные</div>
+                    <div class="field">
+                        <label>Логин (не изменяется)</label>
+                        <input value="{{ user.username }}" disabled style="background:#f1f5f9;color:var(--muted)">
+                    </div>
+                    <div class="field">
+                        <label>ФИО *</label>
+                        <input name="full_name" value="{{ user.full_name }}" required>
+                    </div>
+                    <div class="field">
+                        <label>Адрес</label>
+                        <input name="address" value="{{ user.address or '' }}">
+                    </div>
+                    {% if user.meter and user.meter.meter_type == 'промышленный' %}
+                    <div class="field">
+                        <label>Организация *</label>
+                        <input name="organization" value="{{ user.organization or '' }}" required placeholder="ООО «ПромГаз»">
+                        <div class="hint">Для промышленного счётчика организация обязательна.</div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div>
+                    <div class="section">Смена пароля</div>
+                    <div class="field">
+                        <label>Текущий пароль</label>
+                        <input type="password" name="current_password" autocomplete="current-password">
+                    </div>
+                    <div class="field">
+                        <label>Новый пароль</label>
+                        <input type="password" name="new_password" minlength="6" autocomplete="new-password">
+                    </div>
+                    <div class="field">
+                        <label>Повторите</label>
+                        <input type="password" name="new_password2" minlength="6" autocomplete="new-password">
+                    </div>
+                    <div class="hint">Оставьте поля пароля пустыми, если не хотите его менять.</div>
+                </div>
+            </div>
+            <button class="mt" style="margin-top:24px">Сохранить</button>
+        </form>
+    </div>
+    <p class="mt center"><a href="{{ url_for('client') }}" style="color:var(--blue);font-weight:600">Вернуться в кабинет</a></p>
+</div>
+{% endblock %}
